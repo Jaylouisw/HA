@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "HAM Network Map Setup",
+        "title": "HAMapper Setup",
         "description": "Configure your Home Assistant instance for the community network map.",
         "data": {
           "display_name": "Display Name",
@@ -21,7 +21,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "HAM Network Options",
+        "title": "HAMapper Options",
         "data": {
           "share_location": "Share my location on the map",
           "discovery_server": "Discovery Server URL"

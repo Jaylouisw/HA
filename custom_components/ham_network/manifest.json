@@ -1,6 +1,6 @@
 {
   "domain": "ham_network",
-  "name": "HAM Network Map",
+  "name": "HAMapper",
   "codeowners": [],
   "config_flow": true,
   "dependencies": [],

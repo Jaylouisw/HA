@@ -1,7 +1,7 @@
-"""Constants for the HAM Network integration."""
+"""Constants for the HAMapper integration."""
 
 DOMAIN = "ham_network"
-NAME = "HAM Network Map"
+NAME = "HAMapper"
 VERSION = "2.0.0"
 
 # Configuration keys
