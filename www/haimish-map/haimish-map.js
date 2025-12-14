@@ -10,9 +10,10 @@
  * - ASN transitions and provider network identification
  * - IXP (Internet Exchange Point) detection
  * - Datacenter/cloud provider identification
+ * - LIVE real-time updates via Home Assistant events
  */
 
-const CARD_VERSION = '2.0.0';
+const CARD_VERSION = '2.1.0';
 
 // Leaflet CSS and JS URLs
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -27,6 +28,13 @@ const PROVIDER_COLORS = {
   ixp: '#E91E63',       // Pink for IXPs
   datacenter: '#00BCD4', // Cyan for datacenters
   unknown: '#9E9E9E',   // Grey for unknown
+};
+
+// Animation colors
+const ANIMATION_COLORS = {
+  newPeer: '#4CAF50',
+  newTraceroute: '#FF9800',
+  pulse: '#03A9F4',
 };
 
 // Load external resources
@@ -67,6 +75,9 @@ class HAIMishMapCard extends HTMLElement {
     this._map = null;
     this._markers = [];
     this._polylines = [];
+    this._eventSubscriptions = [];
+    this._liveActivityQueue = [];
+    this._animatingPaths = new Map();
   }
 
   static get properties() {
@@ -89,6 +100,8 @@ class HAIMishMapCard extends HTMLElement {
       show_path_details: true,      // Show ASN/IXP info on paths
       show_enriched_hops: true,     // Show intermediate hops on map
       color_by_provider: true,      // Color paths by provider type
+      show_live_activity: true,     // Show live activity feed
+      animate_new_data: true,       // Animate new peers/traceroutes
       marker_color: '#03a9f4',
       my_marker_color: '#4caf50',
       link_color: '#ff9800',
@@ -100,12 +113,24 @@ class HAIMishMapCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const oldHass = this._hass;
     this._hass = hass;
+    
     if (!this._initialized) {
       this._initialize();
     } else {
       this._updateMap();
     }
+    
+    // Subscribe to events if hass changed and we have connection
+    if (hass && hass.connection && (!oldHass || oldHass.connection !== hass.connection)) {
+      this._subscribeToEvents();
+    }
+  }
+
+  disconnectedCallback() {
+    // Clean up event subscriptions
+    this._unsubscribeFromEvents();
   }
 
   async _initialize() {
@@ -118,10 +143,183 @@ class HAIMishMapCard extends HTMLElement {
       this._initMap();
       this._initialized = true;
       this._updateMap();
+      this._subscribeToEvents();
     } catch (error) {
       console.error('Failed to initialize HAIMish Map:', error);
       this._renderError(error);
     }
+  }
+
+  _subscribeToEvents() {
+    if (!this._hass?.connection) return;
+    
+    // Unsubscribe from old subscriptions first
+    this._unsubscribeFromEvents();
+    
+    // Subscribe to peer discovered events
+    this._hass.connection.subscribeEvents((event) => {
+      this._onPeerDiscovered(event.data);
+    }, 'haimish_peer_discovered').then(unsub => {
+      this._eventSubscriptions.push(unsub);
+    }).catch(err => console.debug('Event subscription error:', err));
+    
+    // Subscribe to traceroute received events
+    this._hass.connection.subscribeEvents((event) => {
+      this._onTracerouteReceived(event.data);
+    }, 'haimish_traceroute_received').then(unsub => {
+      this._eventSubscriptions.push(unsub);
+    }).catch(err => console.debug('Event subscription error:', err));
+    
+    // Subscribe to traceroute complete events
+    this._hass.connection.subscribeEvents((event) => {
+      this._onTracerouteComplete(event.data);
+    }, 'haimish_traceroute_complete').then(unsub => {
+      this._eventSubscriptions.push(unsub);
+    }).catch(err => console.debug('Event subscription error:', err));
+    
+    // Subscribe to mobile traceroute events
+    this._hass.connection.subscribeEvents((event) => {
+      this._onMobileTraceroute(event.data);
+    }, 'haimish_mobile_traceroute').then(unsub => {
+      this._eventSubscriptions.push(unsub);
+    }).catch(err => console.debug('Event subscription error:', err));
+    
+    console.info('HAIMish: Subscribed to live events');
+  }
+
+  _unsubscribeFromEvents() {
+    this._eventSubscriptions.forEach(unsub => {
+      if (typeof unsub === 'function') unsub();
+    });
+    this._eventSubscriptions = [];
+  }
+
+  _onPeerDiscovered(data) {
+    console.info('HAIMish: New peer discovered:', data);
+    this._addLiveActivity('peer', `New peer: ${data.display_name || data.peer_id}`);
+    
+    // Animate if we have location
+    if (this.config.animate_new_data) {
+      this._updateMap();
+      // Flash effect on map
+      this._flashNotification('🟢 New peer discovered!');
+    }
+  }
+
+  _onTracerouteReceived(data) {
+    console.info('HAIMish: Traceroute received from network:', data);
+    this._addLiveActivity('traceroute', `Traceroute: ${data.source_peer_id?.slice(0,8)} → ${data.target_peer_id?.slice(0,8)}`);
+    
+    if (this.config.animate_new_data && data.hops) {
+      this._animateTraceroute(data.hops);
+    }
+    
+    // Refresh to show new data
+    this._updateMap();
+  }
+
+  _onTracerouteComplete(data) {
+    console.info('HAIMish: Traceroute complete:', data);
+    const msg = data.success 
+      ? `Traceroute to ${data.target_name}: ${data.hop_count} hops, ${data.total_time_ms?.toFixed(0)}ms`
+      : `Traceroute to ${data.target_name} failed`;
+    this._addLiveActivity('traceroute', msg);
+    this._flashNotification(data.success ? '✅ Traceroute complete' : '❌ Traceroute failed');
+    this._updateMap();
+  }
+
+  _onMobileTraceroute(data) {
+    console.info('HAIMish: Mobile traceroute:', data);
+    this._addLiveActivity('mobile', `📱 Mobile trace via ${data.carrier || 'unknown carrier'}`);
+    this._flashNotification('📱 Mobile traceroute received!');
+    this._updateMap();
+  }
+
+  _addLiveActivity(type, message) {
+    if (!this.config.show_live_activity) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    this._liveActivityQueue.unshift({ type, message, timestamp });
+    
+    // Keep only last 5 activities
+    if (this._liveActivityQueue.length > 5) {
+      this._liveActivityQueue.pop();
+    }
+    
+    this._updateLiveActivityPanel();
+  }
+
+  _updateLiveActivityPanel() {
+    const panel = this.shadowRoot.getElementById('live-activity');
+    if (!panel) return;
+    
+    if (this._liveActivityQueue.length === 0) {
+      panel.innerHTML = '<div class="activity-empty">Waiting for activity...</div>';
+      return;
+    }
+    
+    panel.innerHTML = this._liveActivityQueue.map(item => {
+      const icon = item.type === 'peer' ? '👤' : item.type === 'mobile' ? '📱' : '🌐';
+      return `
+        <div class="activity-item ${item.type}">
+          <span class="activity-icon">${icon}</span>
+          <span class="activity-message">${item.message}</span>
+          <span class="activity-time">${item.timestamp}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  _flashNotification(message) {
+    const notification = this.shadowRoot.getElementById('notification');
+    if (!notification) return;
+    
+    notification.textContent = message;
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 3000);
+  }
+
+  _animateTraceroute(hops) {
+    if (!this._map || !hops || hops.length === 0) return;
+    
+    // Filter hops with valid geo data
+    const geoHops = hops.filter(h => h.geo?.latitude && h.geo?.longitude);
+    if (geoHops.length < 2) return;
+    
+    // Create animated path
+    const coords = geoHops.map(h => [h.geo.latitude, h.geo.longitude]);
+    
+    // Create a pulsing polyline
+    const animatedPath = L.polyline(coords, {
+      color: ANIMATION_COLORS.newTraceroute,
+      weight: 4,
+      opacity: 0.9,
+      className: 'animated-path',
+    }).addTo(this._map);
+    
+    // Add pulse animation to each hop
+    geoHops.forEach((hop, index) => {
+      setTimeout(() => {
+        const pulseMarker = L.circleMarker([hop.geo.latitude, hop.geo.longitude], {
+          radius: 8,
+          fillColor: ANIMATION_COLORS.pulse,
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.8,
+          className: 'pulse-marker',
+        }).addTo(this._map);
+        
+        // Remove pulse after animation
+        setTimeout(() => pulseMarker.remove(), 2000);
+      }, index * 200); // Stagger animations
+    });
+    
+    // Remove animated path after a few seconds
+    setTimeout(() => animatedPath.remove(), 5000);
   }
 
   _render() {
@@ -296,13 +494,129 @@ class HAIMishMapCard extends HTMLElement {
           background: #9e9e9e;
           color: white;
         }
+        
+        /* Live activity styles */
+        .live-activity {
+          max-height: 120px;
+          overflow-y: auto;
+          padding: 8px 16px;
+          border-top: 1px solid var(--divider-color);
+          font-size: 0.8em;
+          background: var(--card-background-color, #fafafa);
+        }
+        .live-activity-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        .live-activity-title {
+          font-weight: 500;
+          color: var(--primary-text-color);
+        }
+        .live-indicator {
+          width: 8px;
+          height: 8px;
+          background: #4CAF50;
+          border-radius: 50%;
+          animation: pulse-live 2s infinite;
+        }
+        @keyframes pulse-live {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .activity-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 0;
+          border-bottom: 1px solid var(--divider-color, #eee);
+        }
+        .activity-item:last-child {
+          border-bottom: none;
+        }
+        .activity-icon {
+          font-size: 14px;
+        }
+        .activity-message {
+          flex: 1;
+          color: var(--primary-text-color);
+        }
+        .activity-time {
+          color: var(--secondary-text-color);
+          font-size: 0.85em;
+        }
+        .activity-empty {
+          color: var(--secondary-text-color);
+          font-style: italic;
+        }
+        
+        /* Notification toast */
+        .notification {
+          position: absolute;
+          top: 60px;
+          left: 50%;
+          transform: translateX(-50%) translateY(-20px);
+          background: var(--primary-color, #03a9f4);
+          color: white;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 0.85em;
+          opacity: 0;
+          transition: opacity 0.3s, transform 0.3s;
+          z-index: 1001;
+          pointer-events: none;
+        }
+        .notification.show {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        
+        /* Animated path styles */
+        .animated-path {
+          animation: dash-animation 1s linear infinite;
+        }
+        @keyframes dash-animation {
+          to { stroke-dashoffset: -20; }
+        }
+        .pulse-marker {
+          animation: pulse-marker 1s ease-out;
+        }
+        @keyframes pulse-marker {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* Sharing status indicator */
+        .sharing-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 8px;
+          font-size: 0.75em;
+          border-radius: 12px;
+        }
+        .sharing-status.enabled {
+          background: rgba(76, 175, 80, 0.1);
+          color: #4CAF50;
+        }
+        .sharing-status.disabled {
+          background: rgba(158, 158, 158, 0.1);
+          color: #9E9E9E;
+        }
       </style>
       <ha-card>
         <div class="card-header">
           <span>${this.config.title}</span>
-          <span class="peer-count" id="peer-count">0 peers</span>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="sharing-status" id="sharing-status"></span>
+            <span class="peer-count" id="peer-count">0 peers</span>
+          </div>
         </div>
-        <div id="map-container"></div>
+        <div style="position: relative;">
+          <div id="map-container"></div>
+          <div class="notification" id="notification"></div>
+        </div>
         <div class="info-panel" id="info-panel">
           <div class="info-row">
             <span class="info-label">Status:</span>
@@ -317,6 +631,15 @@ class HAIMishMapCard extends HTMLElement {
           <h5>🌐 Path Analysis</h5>
           <div id="asn-path" class="asn-transit"></div>
           <div class="path-stats" id="path-stats"></div>
+        </div>
+        <div class="live-activity" id="live-activity-container">
+          <div class="live-activity-header">
+            <span class="live-activity-title">📡 Live Activity</span>
+            <div class="live-indicator"></div>
+          </div>
+          <div id="live-activity">
+            <div class="activity-empty">Waiting for activity...</div>
+          </div>
         </div>
         <div class="actions">
           <button class="action-btn" id="btn-refresh">
@@ -415,11 +738,26 @@ class HAIMishMapCard extends HTMLElement {
     const myLocation = attrs.my_location || {};
     const myPeerId = attrs.my_peer_id;
     const traceroutes = attrs.traceroutes || {};
+    const sharedTraceroutes = attrs.shared_traceroutes || [];
+    const sharingEnabled = attrs.sharing_enabled || false;
+    const mobileEnabled = attrs.mobile_tracking_enabled || false;
 
     // Update info panel
     this._updateStatus('Connected');
     this.shadowRoot.getElementById('peer-count').textContent = `${peers.length} peers`;
     this.shadowRoot.getElementById('link-count').textContent = links.length.toString();
+    
+    // Update sharing status
+    const sharingStatus = this.shadowRoot.getElementById('sharing-status');
+    if (sharingStatus) {
+      if (sharingEnabled) {
+        sharingStatus.className = 'sharing-status enabled';
+        sharingStatus.innerHTML = '🔗 Sharing';
+      } else {
+        sharingStatus.className = 'sharing-status disabled';
+        sharingStatus.innerHTML = '🔒 Private';
+      }
+    }
 
     // Clear existing markers and lines
     this._clearMapLayers();
@@ -456,6 +794,8 @@ class HAIMishMapCard extends HTMLElement {
     // Draw enriched traceroute paths if available
     if (this.config.show_enriched_hops) {
       this._drawEnrichedPaths(traceroutes);
+      // Also draw shared traceroutes from other nodes
+      this._drawSharedTraceroutes(sharedTraceroutes);
     }
 
     // Update path summary panel if we have traceroute data
@@ -466,6 +806,39 @@ class HAIMishMapCard extends HTMLElement {
       const group = L.featureGroup(this._markers);
       this._map.fitBounds(group.getBounds().pad(0.1));
     }
+  }
+
+  _drawSharedTraceroutes(sharedTraceroutes) {
+    if (!sharedTraceroutes || sharedTraceroutes.length === 0) return;
+    
+    sharedTraceroutes.forEach(trace => {
+      const hops = trace.hops || [];
+      const geoHops = hops.filter(h => h.geo?.latitude && h.geo?.longitude);
+      
+      if (geoHops.length < 2) return;
+      
+      const coords = geoHops.map(h => [h.geo.latitude, h.geo.longitude]);
+      
+      // Draw with slightly different style for shared traceroutes
+      const polyline = L.polyline(coords, {
+        color: trace.is_mobile ? '#9C27B0' : '#607D8B',
+        weight: 2,
+        opacity: 0.5,
+        dashArray: '3, 6',
+      }).addTo(this._map);
+      
+      polyline.bindPopup(`
+        <div class="popup-content">
+          <h4>${trace.is_mobile ? '📱' : '🌐'} Shared Traceroute</h4>
+          <p>From: ${trace.source_peer_id?.slice(0, 8)}...</p>
+          <p>To: ${trace.target_peer_id?.slice(0, 8)}...</p>
+          <p>Hops: ${hops.length}</p>
+          ${trace.carrier ? `<p>Carrier: ${trace.carrier}</p>` : ''}
+        </div>
+      `);
+      
+      this._polylines.push(polyline);
+    });
   }
 
   _drawEnrichedPaths(traceroutes) {
@@ -825,11 +1198,26 @@ class HAIMishMapEditor extends HTMLElement {
           margin-bottom: 4px;
           font-weight: 500;
         }
-        input, select {
+        input[type="text"], input[type="number"], select {
           width: 100%;
           padding: 8px;
           border: 1px solid #ccc;
           border-radius: 4px;
+        }
+        .checkbox-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .checkbox-group input {
+          width: auto;
+        }
+        .section-title {
+          font-weight: 600;
+          margin-top: 20px;
+          margin-bottom: 8px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid #eee;
         }
       </style>
       <div class="form-group">
@@ -848,12 +1236,44 @@ class HAIMishMapEditor extends HTMLElement {
         <label>Default Zoom</label>
         <input type="number" id="zoom" value="${this._config.zoom || 4}" min="1" max="18">
       </div>
+      
+      <div class="section-title">Display Options</div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="show_topology" ${this._config.show_topology !== false ? 'checked' : ''}>
+        <label for="show_topology">Show Network Topology</label>
+      </div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="show_traceroute" ${this._config.show_traceroute !== false ? 'checked' : ''}>
+        <label for="show_traceroute">Show Traceroutes</label>
+      </div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="show_enriched_hops" ${this._config.show_enriched_hops !== false ? 'checked' : ''}>
+        <label for="show_enriched_hops">Show Intermediate Hops</label>
+      </div>
+      
+      <div class="section-title">Live Features</div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="show_live_activity" ${this._config.show_live_activity !== false ? 'checked' : ''}>
+        <label for="show_live_activity">Show Live Activity Feed</label>
+      </div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="animate_new_data" ${this._config.animate_new_data !== false ? 'checked' : ''}>
+        <label for="animate_new_data">Animate New Data</label>
+      </div>
     `;
 
-    // Add event listeners
+    // Add event listeners for text/number inputs
     ['entity', 'title', 'height', 'zoom'].forEach(field => {
       this.querySelector(`#${field}`).addEventListener('change', (e) => {
         this._config = { ...this._config, [field]: e.target.value };
+        this._fireConfigChanged();
+      });
+    });
+    
+    // Add event listeners for checkboxes
+    ['show_topology', 'show_traceroute', 'show_enriched_hops', 'show_live_activity', 'animate_new_data'].forEach(field => {
+      this.querySelector(`#${field}`).addEventListener('change', (e) => {
+        this._config = { ...this._config, [field]: e.target.checked };
         this._fireConfigChanged();
       });
     });
