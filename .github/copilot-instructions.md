@@ -1,77 +1,104 @@
-<!-- Home Assistant Map (HAM) - Community Network Topology Integration -->
+# Home Assistant Projects Repository
 
-# Project: Home Assistant Community Map & Network Topology
+## Role
+You are Jay's **Home Assistant Architect**. This repo (`jaylouisw/HA`) contains custom integrations, add-ons, and automations for Home Assistant. Help design, build, and maintain HA projects with best practices.
 
-## Overview
-A Home Assistant custom integration that:
-1. Shows Home Assistant deployments on a geographical map
-2. Performs traceroute between participating instances
-3. Visualizes network topology between community members
-4. Geographically enriches each hop with ASN, IXP, and datacenter detection
-5. Respects user privacy with daily toggle cooldowns and location fuzzing
+## Current Status
+**HAMapp** is the first project - ready to push after local file restructure. It's complete and HACS-ready.
+
+---
+
+# HAMapp - HAM Network Map (Ready to Push)
+
+## Project Overview
+A **fully distributed P2P** Home Assistant custom integration that:
+- Shows HA deployments on a geographical map
+- Runs traceroutes between participating instances
+- Visualizes network topology with geographic hop enrichment
+- Uses **BitTorrent DHT** for zero-config peer discovery (no central server!)
+
+## Repository Structure
+```
+jaylouisw/HA/
+├── .github/workflows/     # CI/CD at repo root
+│   ├── hacs.yaml          # HACS validation
+│   ├── release.yaml       # Auto-builds ham_network.zip on release
+│   └── validate.yaml      # Python syntax checks
+├── HAMapp/                # This integration
+│   ├── custom_components/ham_network/
+│   ├── www/ham-network-map/
+│   ├── hacs.json
+│   └── README.md
+└── (future HA projects)
+```
 
 ## Tech Stack
-- Python 3.11+ (Home Assistant integration)
-- Home Assistant Custom Component structure
+- Python 3.11+ (Home Assistant custom component)
+- aiohttp for HTTP/P2P communication
+- BitTorrent DHT (mainline) for decentralized discovery
+- IPFS PubSub (optional) for additional discovery
 - Leaflet.js for map visualization
-- P2P distributed peer discovery (no central server)
-- IP Intelligence (geo-location, ASN lookup, IXP detection)
+- P2P gossip protocol
 
-## Project Structure
+## Key Features Implemented
+- ✅ Privacy controls (location fuzzing, 24hr toggle cooldown, anonymous mode)
+- ✅ Zero-config discovery via BitTorrent DHT + IPFS
+- ✅ Dynamic ports (like BitTorrent - auto-assigned, advertised via DHT)
+- ✅ IP Intelligence (geo-location, ASN, IXP detection, datacenter ID)
+- ✅ Lovelace card with path visualization
+- ✅ HACS-ready with GitHub Actions
+
+## Key Files
+| File | Purpose |
+|------|---------|
+| `discovery.py` | BitTorrent DHT + IPFS auto-discovery |
+| `p2p.py` | P2P node with gossip protocol |
+| `ip_intel.py` | IP geolocation, ASN, IXP detection |
+| `network.py` | Traceroute with geo enrichment |
+| `coordinator.py` | HA data coordinator, orchestrates everything |
+| `privacy.py` | Privacy manager with daily toggle cooldown |
+| `ham-network-map.js` | Lovelace card (Leaflet map) |
+
+## DHT Info Hash
+All HAM nodes announce to the same DHT info_hash:
 ```
-custom_components/
-  ham_network/
-    __init__.py          # Integration setup
-    manifest.json        # HA integration manifest
-    config_flow.py       # Configuration UI
-    const.py             # Constants
-    coordinator.py       # Data update coordinator
-    sensor.py            # Sensor entities
-    services.yaml        # Service definitions
-    api.py               # API client for peer communication
-    network.py           # Traceroute and network utilities
-    ip_intel.py          # IP intelligence (geo, ASN, IXP)
-    privacy.py           # Privacy manager with daily cooldown
-    p2p.py               # P2P distributed peer discovery
-    discovery.py         # Auto-discovery via DHT/IPFS
-    strings.json         # UI strings
-    translations/
-      en.json            # English translations
-www/
-  ham-network-map/
-    ham-network-map.js   # Lovelace card with Leaflet map
+SHA1("ham-network-homeassistant-community-map-v1") = 0d3950cffcc49c22c1d419dff084bd5d300ceba0
 ```
 
-## Features
-- **Privacy First**: Toggle-able settings with 24-hour cooldown, location fuzzing
-- **Zero Config Discovery**: Automatic peer finding via BitTorrent DHT and IPFS
-- **Distributed P2P**: No central server dependency, gossip protocol
-- **Network Path Visualization**: Geographic hop enrichment on traceroute
-- **ASN Tracking**: Provider network identification, ASN transitions
-- **Infrastructure Detection**: IXPs, datacenters, cloud providers, CDNs
-- **Leaderboard**: Optional anonymous participation
+## Dynamic Port Handling
+- P2P and DHT both use `port=0` (OS auto-assigns)
+- Actual port retrieved after socket bind
+- Port advertised in DHT announcements and gossip
+- Users can optionally set fixed port for NAT/firewall
 
-## Auto-Discovery
-HAM Network uses decentralized discovery so nodes can find each other without any central server:
+## Publishing Checklist
+1. Push to `jaylouisw/HA` repository
+2. Create GitHub release (e.g., `v1.0.0`)
+3. Workflow auto-generates `ham_network.zip` attached to release
+4. Users add `https://github.com/jaylouisw/HA` as HACS custom repo
+5. HACS downloads from release zip
 
-1. **BitTorrent DHT** - Primary method. All HAM nodes announce to the same info_hash in the global DHT.
-2. **IPFS PubSub** - If IPFS is running locally, nodes subscribe to a shared topic.
-3. **DNS Bootstrap** - Fallback for community-maintained bootstrap nodes.
+## Remaining Tasks
+- [ ] Test in actual Home Assistant instance
+- [ ] First real peer discovery test between two nodes
+- [ ] Consider leaderboard feature (partially scaffolded)
 
-The first two nodes ever will find each other through the BitTorrent DHT - a network of millions of nodes
-that requires zero infrastructure from us.
+## Important Notes
+- `.github/workflows/` must be at REPO ROOT, not in HAMapp/
+- HACS uses `zip_release: true` to download from GitHub releases
+- The DHT bootstrap nodes are public mainline DHT (router.bittorrent.com, etc.)
 
-## Checklist
+---
 
-- [x] Verify copilot-instructions.md created
-- [x] Scaffold the Project
-- [x] Customize the Project
-- [x] Install Required Extensions
-- [x] Compile the Project
-- [x] IP Intelligence module (geo, ASN, IXP detection)
-- [x] Network path enrichment integration
-- [x] Lovelace card with path visualization
-- [x] Dynamic port handling (BitTorrent-style)
-- [x] Ensure Documentation is Complete
-- [ ] Create and Run Task
-- [ ] Launch the Project
+# Future Projects
+
+When creating new HA integrations/add-ons:
+- Follow same structure: `ProjectName/custom_components/domain_name/`
+- Add workflow triggers for the new project path
+- Maintain HACS compatibility
+- Use Home Assistant best practices (config_flow, coordinator pattern, etc.)
+- Consider privacy, security, and user experience
+
+## Project Ideas (to discuss with Jay)
+- HAGrid: Advanced Electrical Network mapping integration with data from electricitymaps API, DNOs, and smart meters, as well as a community P2P sharing network for grid data, and openstreetmaps overlays for visualizing local grid infrastructure, substations, and generation sites.
+- HAMarket: A P2P marketplace for Home assistant compatible smart home tech, similar to ebay/facebook marketplace, allowing users to buy, sell, and trade devices directly within the Home Assistant ecosystem, leveraging decentralized discovery and reputation systems, as well as buyer protection, forced tracked postage, with automatic payment on delivery confirmation, community moderation of listings, and community review of buyer disputes. no price changes or haggling after initial offer. cash on collection at seller discretion with a compulsory discount, to be agreed between seller and buyer (to account for saved postage costs). or tracked postage compulsory (at sellers cost). geolocated listings with map view, and simple calendar invites for collection arrangement. no fees for any listings or sales, ever.
