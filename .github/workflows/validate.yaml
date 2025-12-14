@@ -1,0 +1,46 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'HAMapp/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'HAMapp/**'
+
+jobs:
+  validate:
+    name: Validate Integration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: HAMapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install homeassistant
+
+      - name: Validate manifest
+        run: |
+          python -c "import json; json.load(open('custom_components/ham_network/manifest.json'))"
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile custom_components/ham_network/*.py
+
+      - name: Validate strings
+        run: |
+          python -c "import json; json.load(open('custom_components/ham_network/strings.json'))"
+          python -c "import json; json.load(open('custom_components/ham_network/translations/en.json'))"
