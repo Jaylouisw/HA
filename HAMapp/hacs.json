@@ -1,0 +1,11 @@
+{
+  "name": "HAM Network Map",
+  "render_readme": true,
+  "domains": ["sensor"],
+  "country": ["*"],
+  "homeassistant": "2024.1.0",
+  "iot_class": "local_push",
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "ham_network.zip"
+}

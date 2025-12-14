@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HAM Network Map Setup",
+        "description": "Configure your Home Assistant instance for the community network map.",
+        "data": {
+          "display_name": "Display Name",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "public_url": "Public URL (optional)",
+          "discovery_server": "Discovery Server URL",
+          "share_location": "Share my location on the map"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Invalid URL format"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HAM Network Options",
+        "data": {
+          "share_location": "Share my location on the map",
+          "discovery_server": "Discovery Server URL"
+        }
+      }
+    }
+  }
+}

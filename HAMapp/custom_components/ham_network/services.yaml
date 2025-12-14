@@ -1,0 +1,15 @@
+traceroute:
+  name: Run Traceroute
+  description: Run traceroute to one or all HAM Network peers
+  fields:
+    target_peer:
+      name: Target Peer
+      description: The peer ID to traceroute to. Leave empty to traceroute all peers.
+      required: false
+      example: "abc123-def456-..."
+      selector:
+        text:
+
+refresh_peers:
+  name: Refresh Peers
+  description: Refresh the list of peers from the discovery server
