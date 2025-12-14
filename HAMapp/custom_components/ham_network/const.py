@@ -23,6 +23,10 @@ CONF_ANONYMOUS_MODE = "anonymous_mode"
 CONF_LEADERBOARD_VISIBLE = "leaderboard_visible"
 CONF_LEADERBOARD_ANONYMOUS = "leaderboard_anonymous"
 
+# Data sharing configuration (PRIVACY: Disabled by default)
+CONF_SHARE_TRACEROUTE_DATA = "share_traceroute_data"  # Share traceroutes with network
+CONF_ENABLE_MOBILE_TRACKING = "enable_mobile_tracking"  # Allow mobile app to trace back
+
 # Privacy toggle tracking
 CONF_LAST_PRIVACY_CHANGE = "last_privacy_change"
 CONF_PRIVACY_COOLDOWN_HOURS = 24  # Can only change privacy settings once per day
@@ -77,6 +81,8 @@ EVENT_TRACEROUTE_COMPLETE = f"{DOMAIN}_traceroute_complete"
 EVENT_PRIVACY_CHANGED = f"{DOMAIN}_privacy_changed"
 EVENT_LEADERBOARD_UPDATE = f"{DOMAIN}_leaderboard_update"
 EVENT_NETWORK_SCAN_COMPLETE = f"{DOMAIN}_network_scan_complete"
+EVENT_TRACEROUTE_RECEIVED = f"{DOMAIN}_traceroute_received"  # New traceroute from network
+EVENT_MOBILE_TRACEROUTE = f"{DOMAIN}_mobile_traceroute"  # Traceroute from mobile app
 
 # Privacy levels
 PRIVACY_FULL_SHARE = "full"  # Share everything
