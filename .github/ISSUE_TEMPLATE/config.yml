@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/jaylouisw/HA/discussions
+    about: Ask questions or discuss ideas
+  - name: 📖 Documentation
+    url: https://github.com/jaylouisw/HA/tree/main/HAIMish
+    about: Read the HAIMish documentation

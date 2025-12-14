@@ -1,0 +1,55 @@
+name: Assign Copilot to Issues
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  assign-copilot:
+    runs-on: ubuntu-latest
+    # Only run if issue has 'copilot' label or contains certain keywords
+    if: |
+      contains(github.event.issue.labels.*.name, 'copilot') ||
+      contains(github.event.issue.labels.*.name, 'bug') ||
+      contains(github.event.issue.labels.*.name, 'good first issue')
+    
+    steps:
+      - name: Assign Copilot to Issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            console.log(`Assigning Copilot to issue #${issueNumber}`);
+            
+            // Add a comment to indicate Copilot is being assigned
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: '🤖 **Copilot has been assigned to this issue!**\n\nI\'ll analyze the problem and attempt to create a pull request with a fix. This may take a few minutes.\n\n_If you\'d prefer a human to handle this, remove the `copilot` label._'
+            });
+            
+            // Assign Copilot to the issue
+            // Note: This uses the GitHub Copilot coding agent API
+            try {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                assignees: ['copilot']
+              });
+              console.log('Successfully assigned Copilot');
+            } catch (error) {
+              console.log('Could not assign Copilot directly, may need manual assignment');
+              // Add label to track
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: ['copilot-requested']
+              });
+            }

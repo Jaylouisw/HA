@@ -1,0 +1,81 @@
+name: 🐛 Bug Report (Copilot Fix)
+description: Report a bug and let Copilot attempt to fix it
+title: "[Bug]: "
+labels: ["bug", "copilot"]
+assignees:
+  - copilot
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🤖 **This issue will be automatically assigned to Copilot for a fix attempt.**
+        
+        Please provide as much detail as possible to help Copilot understand and fix the issue.
+
+  - type: input
+    id: integration
+    attributes:
+      label: Integration
+      description: Which integration is affected?
+      placeholder: e.g., HAIMish
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what's happening...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead?
+      placeholder: Describe what you expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Any relevant error messages or logs
+      placeholder: Paste error logs here...
+      render: shell
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Relevant Files
+      description: If you know which files might be involved, list them here
+      placeholder: |
+        - custom_components/haimish/coordinator.py
+        - www/haimish-map/haimish-map.js
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant Version
+      placeholder: e.g., 2024.12.0
+
+  - type: input
+    id: integration-version
+    attributes:
+      label: Integration Version
+      placeholder: e.g., v1.1.0

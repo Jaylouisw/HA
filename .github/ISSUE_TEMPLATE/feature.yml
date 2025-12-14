@@ -1,0 +1,48 @@
+name: ✨ Feature Request
+description: Suggest a new feature
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe what you'd like to see.
+
+  - type: input
+    id: integration
+    attributes:
+      label: Integration
+      description: Which integration should this be added to?
+      placeholder: e.g., HAIMish
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Why would this feature be useful? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: checkboxes
+    id: copilot
+    attributes:
+      label: Copilot
+      description: Would you like Copilot to attempt implementing this?
+      options:
+        - label: Yes, assign Copilot to this feature request
