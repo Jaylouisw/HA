@@ -89,7 +89,7 @@ class HAMNetworkConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             
             if not errors:
                 # Check for existing entry
-                await self.async_set_unique_id(f"ham_network_{user_input[CONF_DISPLAY_NAME]}")
+                await self.async_set_unique_id(f"haimish_{user_input[CONF_DISPLAY_NAME]}")
                 self._abort_if_unique_id_configured()
                 
                 return self.async_create_entry(

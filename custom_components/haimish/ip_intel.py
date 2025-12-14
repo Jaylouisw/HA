@@ -296,7 +296,7 @@ class IPIntelligence:
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=10),
-                headers={"User-Agent": "HAM-Network/2.0 (Home Assistant Integration)"}
+                headers={"User-Agent": "HAIMish/2.0 (Home Assistant Integration)"}
             )
         return self._session
 

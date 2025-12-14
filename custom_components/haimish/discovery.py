@@ -1,5 +1,5 @@
 """
-Decentralized Auto-Discovery for HAM Network.
+Decentralized Auto-Discovery for HAIMish.
 
 Enables Home Assistant instances to find each other automatically
 without any central server or pre-configured bootstrap peers.
@@ -10,7 +10,7 @@ Discovery Methods (in order of preference):
 3. DNS Bootstrap - Fallback DNS TXT records for known community nodes
 
 The key insight: We use existing decentralized infrastructure (BitTorrent DHT)
-as a "rendezvous point" where HAM nodes can find each other.
+as a "rendezvous point" where HAIMish nodes can find each other.
 """
 from __future__ import annotations
 
@@ -31,8 +31,9 @@ import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
 
-# Project identifier - all HAM nodes use this to find each other
-HAM_NETWORK_ID = "ham-network-homeassistant-community-map-v1"
+# Project identifier - all HAIMish nodes use this to find each other
+# Note: Keep this ID for backwards compatibility with existing nodes
+HAIMISH_NETWORK_ID = "ham-network-homeassistant-community-map-v1"
 
 # DHT settings
 DHT_BOOTSTRAP_NODES = [
@@ -43,12 +44,12 @@ DHT_BOOTSTRAP_NODES = [
 ]
 
 # IPFS settings
-IPFS_PUBSUB_TOPIC = "/ham-network/discovery/v1"
+IPFS_PUBSUB_TOPIC = "/haimish/discovery/v1"
 IPFS_API_DEFAULT = "http://127.0.0.1:5001"
 
 # DNS fallback - community-maintained TXT records
 DNS_BOOTSTRAP_DOMAINS = [
-    "_ham-bootstrap.ham-network.org",  # Future community domain
+    "_haimish-bootstrap.haimish.org",  # Future community domain
 ]
 
 # Discovery intervals
@@ -56,11 +57,11 @@ DISCOVERY_INTERVAL = 300  # 5 minutes
 ANNOUNCE_INTERVAL = 600   # 10 minutes
 
 
-def generate_info_hash(network_id: str = HAM_NETWORK_ID) -> bytes:
+def generate_info_hash(network_id: str = HAIMISH_NETWORK_ID) -> bytes:
     """
     Generate a consistent info_hash for DHT discovery.
     
-    All HAM nodes use the same info_hash to find each other
+    All HAIMish nodes use the same info_hash to find each other
     in the BitTorrent DHT network.
     """
     return hashlib.sha1(network_id.encode()).digest()
@@ -86,7 +87,7 @@ class BitTorrentDHT:
     """
     Minimal BitTorrent DHT client for peer discovery.
     
-    Uses the mainline DHT to announce and find HAM Network peers.
+    Uses the mainline DHT to announce and find HAIMish peers.
     This is a lightweight implementation focused only on peer discovery.
     
     Port Handling:
@@ -244,8 +245,8 @@ class BitTorrentDHT:
         """
         Find peers for an info_hash in the DHT.
         
-        This is how HAM nodes find each other - they all query
-        for the same info_hash derived from HAM_NETWORK_ID.
+        This is how HAIMish nodes find each other - they all query
+        for the same info_hash derived from HAIMISH_NETWORK_ID.
         """
         self._peers_found = []
         
@@ -492,7 +493,7 @@ class AutoDiscovery:
     Main auto-discovery coordinator.
     
     Manages multiple discovery methods and provides a unified
-    interface for finding HAM Network peers.
+    interface for finding HAIMish peers.
     
     Port Handling:
     - p2p_port=0 means auto-assign (recommended for dynamic ports like BitTorrent)
@@ -545,7 +546,7 @@ class AutoDiscovery:
         """Start auto-discovery."""
         self._running = True
         
-        _LOGGER.info("Starting HAM Network auto-discovery...")
+        _LOGGER.info("Starting HAIMish auto-discovery...")
         _LOGGER.info("DHT info_hash: %s", self._info_hash.hex())
         
         # Start DHT

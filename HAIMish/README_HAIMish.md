@@ -1,8 +1,12 @@
-# HAM Network Map
+# HAIMish
+
+**Home Assistant Internet Map (ish)**
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/jaylouisw/HA.svg)](https://github.com/jaylouisw/HA/releases)
 [![License](https://img.shields.io/github/license/jaylouisw/HA.svg)](LICENSE)
+
+> **Note**: This README is kept for reference. See the main [README.md](../README.md) for current documentation.
 
 A Home Assistant custom integration that displays community Home Assistant deployments on a geographical map and visualizes network topology between participating instances.
 
@@ -19,14 +23,14 @@ A Home Assistant custom integration that displays community Home Assistant deplo
 
 ## How It Works
 
-HAM Network uses a **fully distributed P2P architecture** - no central server required:
+HAIMish uses a **fully distributed P2P architecture** - no central server required:
 
 1. **BitTorrent DHT Discovery**: Nodes announce themselves to the global BitTorrent DHT (the same network used by millions of torrent clients)
 2. **IPFS PubSub** (optional): If you run IPFS locally, nodes also discover via pub/sub
 3. **Gossip Protocol**: Once connected, nodes share peer lists and topology data
 4. **Dynamic Ports**: Like BitTorrent, nodes use auto-assigned ports and advertise them during discovery
 
-The first two HAM nodes ever will find each other through the global DHT - requiring zero infrastructure from us!
+The first two HAIMish nodes ever will find each other through the global DHT - requiring zero infrastructure from us!
 
 ## Installation
 
