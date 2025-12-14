@@ -1,12 +1,21 @@
 # HAIMish
 
-**Home Assistant Internet Map (ish)**
+<p align="center">
+  <img src="images/banner.png" alt="HAIMish - Global HAIMish Network - Decentralized P2P Connectivity" width="600">
+</p>
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/jaylouisw/HA.svg)](https://github.com/jaylouisw/HA/releases)
-[![License](https://img.shields.io/github/license/jaylouisw/HA.svg)](LICENSE)
+<p align="center">
+  <strong>Home Assistant Internet Map (ish)</strong><br>
+  <em>Decentralized P2P Connectivity for the Home Assistant Community</em>
+</p>
 
-> **Note**: This README is kept for reference. See the main [README.md](../README.md) for current documentation.
+<p align="center">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Badge"></a>
+  <a href="https://github.com/jaylouisw/HA/releases"><img src="https://img.shields.io/github/release/jaylouisw/HA.svg" alt="GitHub Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jaylouisw/HA.svg" alt="License"></a>
+</p>
+
+---
 
 A Home Assistant custom integration that displays community Home Assistant deployments on a geographical map and visualizes network topology between participating instances.
 

@@ -1,14 +1,21 @@
 # HAIMish
 
-**Home Assistant Internet Map (ish)**
+<p align="center">
+  <img src="HAIMish/images/banner.png" alt="HAIMish - Global HAIMish Network - Decentralized P2P Connectivity" width="700">
+</p>
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/jaylouisw/HA.svg)](https://github.com/jaylouisw/HA/releases)
-[![License](https://img.shields.io/github/license/jaylouisw/HA.svg)](LICENSE)
+<p align="center">
+  <strong>Home Assistant Internet Map (ish)</strong><br>
+  <em>See where the Home Assistant community is deployed around the world!</em>
+</p>
 
-See where the Home Assistant community is deployed around the world and visualize the network paths between us!
+<p align="center">
+  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Badge"></a>
+  <a href="https://github.com/jaylouisw/HA/releases"><img src="https://img.shields.io/github/release/jaylouisw/HA.svg" alt="GitHub Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/jaylouisw/HA.svg" alt="License"></a>
+</p>
 
-![HAIMish Map Preview](https://via.placeholder.com/800x400?text=HAIMish+Map+Preview)
+---
 
 ## ✨ Features
 
