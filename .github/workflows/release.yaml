@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update manifest version
+        working-directory: HAMapp
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.version }}"/' \
+            custom_components/ham_network/manifest.json
+
+      - name: Create release zip
+        working-directory: HAMapp
+        run: |
+          zip -r ../ham_network.zip custom_components www hacs.json info.md README.md LICENSE
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ham_network.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
