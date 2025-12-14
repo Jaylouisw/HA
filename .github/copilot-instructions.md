@@ -3,8 +3,37 @@
 ## Role
 You are Jay's **Home Assistant Architect**. This repo (`jaylouisw/HA`) contains custom integrations, add-ons, and automations for Home Assistant. Help design, build, and maintain HA projects with best practices.
 
+## ⚠️ CRITICAL SECURITY RULES
+
+### NEVER commit these files:
+- `.env` / `.env.*` / `*.env` - Environment variables with secrets
+- `secrets.yaml` / `secrets.yml` - Home Assistant secrets
+- Any file containing API keys, tokens, or passwords
+
+### If `.env` is accidentally committed:
+1. **IMMEDIATELY** remove it from git tracking: `git rm --cached .env`
+2. **SCRUB from history** using BFG or git filter-repo:
+   ```bash
+   # Using BFG Repo-Cleaner (recommended):
+   bfg --delete-files .env
+   git reflog expire --expire=now --all && git gc --prune=now --aggressive
+   git push --force
+   
+   # Or using git filter-repo:
+   git filter-repo --path .env --invert-paths
+   git push --force
+   ```
+3. **Rotate any exposed secrets** immediately
+4. Check GitHub's "Security" tab for any secret scanning alerts
+
+### Before every commit, verify:
+- `git status` does not show `.env` or secrets files
+- Use `git diff --staged` to review what's being committed
+
+---
+
 ## Current Status
-**HAMapp** is the first project - ready to push after local file restructure. It's complete and HACS-ready.
+**HAIMish** is the first project - published and available via HACS.
 
 ---
 
