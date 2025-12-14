@@ -1,4 +1,4 @@
-# HAM Network Map
+# HAMapper
 
 See where the Home Assistant community is deployed around the world and visualize the network paths between us!
 
@@ -6,10 +6,10 @@ See where the Home Assistant community is deployed around the world and visualiz
 
 1. Install via HACS
 2. Restart Home Assistant  
-3. Add integration: **Settings** → **Devices & Services** → **Add Integration** → **HAM Network Map**
+3. Add integration: **Settings** → **Devices & Services** → **Add Integration** → **HAMapper**
 4. Add the map card to your dashboard
 
-That's it! Your node will automatically discover other HAM Network peers via BitTorrent DHT.
+That's it! Your node will automatically discover other HAMapper peers via BitTorrent DHT.
 
 ## What You'll See
 

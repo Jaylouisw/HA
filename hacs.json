@@ -1,5 +1,5 @@
 {
-  "name": "HAM Network Map",
+  "name": "HAMapper",
   "render_readme": true,
   "domains": ["sensor"],
   "country": ["*"],
