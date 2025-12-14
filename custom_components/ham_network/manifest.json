@@ -1,6 +1,6 @@
 {
   "domain": "ham_network",
-  "name": "HAMapper",
+  "name": "HAIMish",
   "codeowners": [],
   "config_flow": true,
   "dependencies": [],

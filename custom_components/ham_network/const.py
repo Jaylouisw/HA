@@ -1,7 +1,7 @@
-"""Constants for the HAMapper integration."""
+"""Constants for the HAIMish integration."""
 
 DOMAIN = "ham_network"
-NAME = "HAMapper"
+NAME = "HAIMish"
 VERSION = "2.0.0"
 
 # Configuration keys
