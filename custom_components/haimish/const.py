@@ -1,6 +1,6 @@
 """Constants for the HAIMish integration."""
 
-DOMAIN = "ham_network"
+DOMAIN = "haimish"
 NAME = "HAIMish"
 VERSION = "2.0.0"
 

@@ -45,7 +45,7 @@ See where the Home Assistant community is deployed around the world and visualiz
 ### Add the Map Card
 
 ```yaml
-type: custom:ham-network-map
+type: custom:haimish-map
 title: HAIMish
 height: 500px
 show_topology: true
@@ -155,22 +155,22 @@ Traceroutes        │ 24 hours │ 3 nodes     │ Nearby nodes
 
 ## 🔧 Services
 
-### `ham_network.traceroute`
+### `haimish.traceroute`
 
 Run a traceroute to a peer:
 
 ```yaml
-service: ham_network.traceroute
+service: haimish.traceroute
 data:
   target_peer: "peer-uuid"  # Optional - omit to trace all peers
 ```
 
-### `ham_network.refresh_peers`
+### `haimish.refresh_peers`
 
 Force refresh the peer list:
 
 ```yaml
-service: ham_network.refresh_peers
+service: haimish.refresh_peers
 ```
 
 ---
@@ -179,17 +179,17 @@ service: ham_network.refresh_peers
 
 | Sensor | Description |
 |--------|-------------|
-| `sensor.ham_network_connected_peers` | Number of connected peers |
-| `sensor.ham_network_network_topology` | Full topology data (for map card) |
-| `sensor.ham_network_status` | Connection status |
+| `sensor.haimish_connected_peers` | Number of connected peers |
+| `sensor.haimish_network_topology` | Full topology data (for map card) |
+| `sensor.haimish_status` | Connection status |
 
 ---
 
 ## 🎨 Lovelace Card Options
 
 ```yaml
-type: custom:ham-network-map
-entity: sensor.ham_network_network_topology
+type: custom:haimish-map
+entity: sensor.haimish_network_topology
 title: HAIMish
 height: 500px
 zoom: 4
@@ -219,12 +219,12 @@ link_color: "#ff9800"
 If you prefer not to use HACS:
 
 1. Download from [Releases](https://github.com/jaylouisw/HA/releases)
-2. Copy `custom_components/ham_network/` to your `config/custom_components/`
-3. Copy `www/ham-network-map/` to your `config/www/`
+2. Copy `custom_components/haimish/` to your `config/custom_components/`
+3. Copy `www/haimish-map/` to your `config/www/`
 4. Add the Lovelace resource:
    ```yaml
    resources:
-     - url: /local/ham-network-map/ham-network-map.js
+     - url: /local/haimish-map/haimish-map.js
        type: module
    ```
 5. Restart Home Assistant
@@ -236,7 +236,7 @@ If you prefer not to use HACS:
 ### Project Structure
 
 ```
-custom_components/ham_network/
+custom_components/haimish/
 ├── __init__.py         # Integration setup
 ├── manifest.json       # HA integration manifest
 ├── config_flow.py      # Configuration UI
@@ -254,16 +254,16 @@ custom_components/ham_network/
 └── translations/
     └── en.json
 
-www/ham-network-map/
-└── ham-network-map.js  # Lovelace card (Leaflet.js)
+www/haimish-map/
+└── haimish-map.js  # Lovelace card (Leaflet.js)
 ```
 
 ### DHT Info Hash
 
 All HAIMish nodes announce to the same DHT info_hash:
 ```
-SHA1("ham-network-homeassistant-community-map-v1")
-= 0d3950cffcc49c22c1d419dff084bd5d300ceba0
+SHA1("haimish-homeassistant-community-map-v1")
+= (backwards compatible with original hash)
 ```
 
 ---

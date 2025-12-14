@@ -1,5 +1,5 @@
 /**
- * HAM Network Map - Lovelace Card
+ * HAIMish Map - Lovelace Card
  * 
  * A custom Lovelace card that displays Home Assistant community deployments
  * on a geographical map with network topology visualization.
@@ -59,7 +59,7 @@ const loadScript = (url) => {
   });
 };
 
-class HAMNetworkMapCard extends HTMLElement {
+class HAIMishMapCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -81,7 +81,7 @@ class HAMNetworkMapCard extends HTMLElement {
       throw new Error('Please define an entity');
     }
     this.config = {
-      title: 'HAM Network Map',
+      title: 'HAIMish',
       height: '400px',
       zoom: 4,
       show_topology: true,
@@ -119,7 +119,7 @@ class HAMNetworkMapCard extends HTMLElement {
       this._initialized = true;
       this._updateMap();
     } catch (error) {
-      console.error('Failed to initialize HAM Network Map:', error);
+      console.error('Failed to initialize HAIMish Map:', error);
       this._renderError(error);
     }
   }
@@ -704,7 +704,7 @@ class HAMNetworkMapCard extends HTMLElement {
         ${data.public_ip ? `<p>IP: ${data.public_ip}</p>` : ''}
         ${data.version ? `<p>Version: ${data.version}</p>` : ''}
         ${data.last_seen ? `<p>Last seen: ${new Date(data.last_seen).toLocaleString()}</p>` : ''}
-        ${!isMe ? `<p><button onclick="window.dispatchEvent(new CustomEvent('ham-traceroute', {detail: '${data.peer_id}'}))">Traceroute</button></p>` : ''}
+        ${!isMe ? `<p><button onclick="window.dispatchEvent(new CustomEvent('haimish-traceroute', {detail: '${data.peer_id}'}))">Traceroute</button></p>` : ''}
       </div>
     `;
   }
@@ -777,14 +777,14 @@ class HAMNetworkMapCard extends HTMLElement {
   _callService(service, data = {}) {
     if (!this._hass) return;
     
-    this._hass.callService('ham_network', service, data);
+    this._hass.callService('haimish', service, data);
   }
 
   _renderError(error) {
     this.shadowRoot.innerHTML = `
       <ha-card>
         <div style="padding: 16px; color: red;">
-          Error loading HAM Network Map: ${error.message}
+          Error loading HAIMish Map: ${error.message}
         </div>
       </ha-card>
     `;
@@ -795,20 +795,20 @@ class HAMNetworkMapCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement('ham-network-map-editor');
+    return document.createElement('haimish-map-editor');
   }
 
   static getStubConfig() {
     return {
-      entity: 'sensor.ham_network_map_network_topology',
-      title: 'HAM Network Map',
+      entity: 'sensor.haimish_network_topology',
+      title: 'HAIMish',
       height: '400px',
     };
   }
 }
 
 // Card Editor
-class HAMNetworkMapEditor extends HTMLElement {
+class HAIMishMapEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
     this._render();
@@ -838,7 +838,7 @@ class HAMNetworkMapEditor extends HTMLElement {
       </div>
       <div class="form-group">
         <label>Title</label>
-        <input type="text" id="title" value="${this._config.title || 'HAM Network Map'}">
+        <input type="text" id="title" value="${this._config.title || 'HAIMish'}">
       </div>
       <div class="form-group">
         <label>Height</label>
@@ -870,21 +870,21 @@ class HAMNetworkMapEditor extends HTMLElement {
 }
 
 // Register custom elements
-customElements.define('ham-network-map', HAMNetworkMapCard);
-customElements.define('ham-network-map-editor', HAMNetworkMapEditor);
+customElements.define('haimish-map', HAIMishMapCard);
+customElements.define('haimish-map-editor', HAIMishMapEditor);
 
 // Register card with Home Assistant
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'ham-network-map',
-  name: 'HAM Network Map',
+  type: 'haimish-map',
+  name: 'HAIMish Map',
   description: 'Display Home Assistant community deployments on a map with network topology',
   preview: true,
-  documentationURL: 'https://github.com/your-username/ham-network',
+  documentationURL: 'https://github.com/jaylouisw/HA',
 });
 
 console.info(
-  `%c HAM-NETWORK-MAP %c v${CARD_VERSION} `,
+  `%c HAIMISH-MAP %c v${CARD_VERSION} `,
   'background: #03a9f4; color: white; font-weight: bold;',
   'background: #333; color: white;'
 );
