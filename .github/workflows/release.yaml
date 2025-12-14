@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   release:
@@ -16,19 +17,18 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Update manifest version
-        working-directory: HAMapp
         run: |
           sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.version }}"/' \
-            custom_components/ham_network/manifest.json
+            custom_components/haimish/manifest.json
 
       - name: Create release zip
-        working-directory: HAMapp
         run: |
-          zip -r ../ham_network.zip custom_components www hacs.json info.md README.md LICENSE
+          zip -r haimish.zip custom_components www hacs.json info.md README.md
 
-      - name: Upload release asset
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ham_network.zip
+          files: haimish.zip
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
