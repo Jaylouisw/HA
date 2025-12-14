@@ -9,6 +9,14 @@ Privacy Design:
 - Public API lookups are rate-limited and cached
 - User's own IP is never sent to third parties unnecessarily
 - All data stays on the user's Home Assistant instance
+
+Infrastructure Database:
+- Comprehensive IXP database with accurate coordinates
+- Major datacenters (Equinix, Interxion, Telehouse, etc.)
+- UK telecom exchanges (BT, Virgin Media, etc.)
+- Cable landing stations
+- Points of Presence (POPs) for CDN providers
+- Carrier hotels
 """
 from __future__ import annotations
 
@@ -27,44 +35,36 @@ from typing import Any
 
 import aiohttp
 
+# Import comprehensive infrastructure database
+from .infrastructure_db import (
+    IXP_PREFIXES,
+    DATACENTER_LOCATIONS,
+    UK_TELECOM_EXCHANGES,
+    CABLE_LANDING_STATIONS,
+    POPS,
+    CARRIER_HOTELS,
+    HOSTING_PROVIDER_ASNS,
+    get_facility_by_ip_prefix,
+    get_provider_info,
+    FacilityLocation,
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 # Cache settings
 CACHE_TTL_HOURS = 24 * 7  # Cache geo data for 1 week
 CACHE_MAX_ENTRIES = 10000
 
-# Known IXP prefixes (major Internet Exchange Points)
+# Legacy mapping for backward compatibility (now uses infrastructure_db)
 KNOWN_IXP_PREFIXES = {
-    # DE-CIX (Frankfurt)
-    "80.81.192.0/22": {"name": "DE-CIX Frankfurt", "city": "Frankfurt", "country": "DE"},
-    "2001:7f8::/32": {"name": "DE-CIX Frankfurt", "city": "Frankfurt", "country": "DE"},
-    # AMS-IX (Amsterdam)
-    "80.249.208.0/21": {"name": "AMS-IX", "city": "Amsterdam", "country": "NL"},
-    "2001:7f8:1::/48": {"name": "AMS-IX", "city": "Amsterdam", "country": "NL"},
-    # LINX (London)
-    "195.66.224.0/21": {"name": "LINX", "city": "London", "country": "GB"},
-    "2001:7f8:4::/48": {"name": "LINX", "city": "London", "country": "GB"},
-    # Equinix IX
-    "206.126.236.0/22": {"name": "Equinix Ashburn", "city": "Ashburn", "country": "US"},
-    "198.32.160.0/21": {"name": "Equinix San Jose", "city": "San Jose", "country": "US"},
-    # NL-ix
-    "193.239.116.0/22": {"name": "NL-ix", "city": "Amsterdam", "country": "NL"},
-    # JPNAP
-    "210.171.224.0/23": {"name": "JPNAP Tokyo", "city": "Tokyo", "country": "JP"},
-    # HKIX
-    "202.40.161.0/24": {"name": "HKIX", "city": "Hong Kong", "country": "HK"},
-    # SIX (Seattle)
-    "206.81.80.0/22": {"name": "SIX Seattle", "city": "Seattle", "country": "US"},
-    # Any-IX
-    "185.1.0.0/22": {"name": "Any2 Exchange", "city": "Los Angeles", "country": "US"},
-    # NYIIX
-    "198.32.118.0/24": {"name": "NYIIX", "city": "New York", "country": "US"},
-    # CoreSite
-    "206.72.210.0/23": {"name": "CoreSite Any2", "city": "Los Angeles", "country": "US"},
-    # MICE (Midwest)
-    "206.53.139.0/24": {"name": "MICE", "city": "Minneapolis", "country": "US"},
-    # TorIX
-    "206.108.34.0/24": {"name": "TorIX", "city": "Toronto", "country": "CA"},
+    prefix: {
+        "name": facility.name,
+        "city": facility.city,
+        "country": facility.country_code,
+        "latitude": facility.latitude,
+        "longitude": facility.longitude,
+    }
+    for prefix, facility in IXP_PREFIXES.items()
 }
 
 # Known datacenter/cloud provider ASNs
@@ -299,13 +299,7 @@ class IPIntelligence:
                 headers={"User-Agent": "HAM-Network/2.0 (Home Assistant Integration)"}
             )
         return self._session
-    
-    async def close(self) -> None:
-        """Close the session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
-    
+
     def _is_private_ip(self, ip: str) -> bool:
         """Check if IP is private/reserved."""
         try:
@@ -320,21 +314,62 @@ class IPIntelligence:
         except ValueError:
             return True
     
-    def _check_ixp(self, ip: str) -> NetworkInfrastructure | None:
-        """Check if IP belongs to a known IXP."""
+    def _check_ixp(self, ip: str) -> tuple[NetworkInfrastructure | None, GeoLocation | None]:
+        """
+        Check if IP belongs to a known IXP or network facility.
+        
+        Uses comprehensive infrastructure database with accurate coordinates.
+        Returns (infrastructure_info, geo_location) if found.
+        """
+        # Use the comprehensive infrastructure database
+        facility = get_facility_by_ip_prefix(ip)
+        
+        if facility:
+            infra = NetworkInfrastructure(
+                is_ixp=facility.facility_type == "ixp",
+                ixp_name=facility.name if facility.facility_type == "ixp" else None,
+                is_datacenter=facility.facility_type == "datacenter",
+                datacenter_name=facility.name if facility.facility_type == "datacenter" else None,
+                is_pop=facility.facility_type == "pop",
+                pop_name=facility.name if facility.facility_type == "pop" else None,
+                facility_type=facility.facility_type,
+            )
+            
+            # Return accurate geo coordinates from infrastructure database
+            geo = GeoLocation(
+                ip=ip,
+                latitude=facility.latitude,
+                longitude=facility.longitude,
+                city=facility.city,
+                country=facility.country,
+                country_code=facility.country_code,
+            )
+            
+            return infra, geo
+        
+        # Fallback to legacy check
         try:
             ip_obj = ipaddress.ip_address(ip)
             for prefix, info in KNOWN_IXP_PREFIXES.items():
                 network = ipaddress.ip_network(prefix, strict=False)
                 if ip_obj in network:
-                    return NetworkInfrastructure(
+                    infra = NetworkInfrastructure(
                         is_ixp=True,
                         ixp_name=info["name"],
                         facility_type="ixp",
                     )
+                    geo = GeoLocation(
+                        ip=ip,
+                        latitude=info.get("latitude"),
+                        longitude=info.get("longitude"),
+                        city=info.get("city"),
+                        country_code=info.get("country"),
+                    )
+                    return infra, geo
         except ValueError:
             pass
-        return None
+        
+        return None, None
     
     def _get_known_provider(self, asn: str) -> dict | None:
         """Get known provider info by ASN."""
@@ -474,35 +509,62 @@ class IPIntelligence:
         
         return asn_info
     
-    async def get_infrastructure_info(self, ip: str, asn_info: ASNInfo | None = None) -> NetworkInfrastructure:
+    async def get_infrastructure_info(
+        self, ip: str, asn_info: ASNInfo | None = None
+    ) -> tuple[NetworkInfrastructure, GeoLocation | None]:
         """
         Identify network infrastructure for an IP.
         
-        Detects IXPs, datacenters, and POPs.
+        Detects IXPs, datacenters, POPs, telecom exchanges, and cable landing stations.
+        Returns accurate coordinates when facility is in our database.
+        
+        Returns:
+            (NetworkInfrastructure, GeoLocation | None) - geo is set if we have
+            accurate facility coordinates from the infrastructure database.
         """
-        # Check for known IXP
-        ixp_info = self._check_ixp(ip)
-        if ixp_info:
-            return ixp_info
+        # Check for known IXP/facility with accurate coordinates
+        infra, facility_geo = self._check_ixp(ip)
+        if infra:
+            return infra, facility_geo
         
         infra = NetworkInfrastructure()
+        facility_geo = None
         
-        # Check based on ASN
+        # Check based on ASN - use enhanced provider database
         if asn_info and asn_info.asn:
-            known = self._get_known_provider(asn_info.asn)
-            if known:
-                if known.get("type") == "cloud":
+            # First check comprehensive HOSTING_PROVIDER_ASNS from infrastructure_db
+            provider = get_provider_info(asn_info.asn)
+            if provider:
+                if provider.get("type") == "cloud":
                     infra.is_datacenter = True
-                    infra.datacenter_name = known.get("name")
+                    infra.datacenter_name = provider.get("name")
                     infra.facility_type = "datacenter"
-                elif known.get("type") == "cdn":
+                elif provider.get("type") == "cdn":
                     infra.is_pop = True
-                    infra.pop_name = known.get("name")
+                    infra.pop_name = provider.get("name")
                     infra.facility_type = "cdn-pop"
-                elif known.get("type") == "transit":
+                elif provider.get("type") == "transit":
                     infra.facility_type = "transit"
+                elif provider.get("type") == "isp":
+                    infra.facility_type = "isp"
+                elif provider.get("type") == "telecom_exchange":
+                    infra.facility_type = "telecom_exchange"
+            else:
+                # Fallback to local KNOWN_PROVIDER_ASNS
+                known = self._get_known_provider(asn_info.asn)
+                if known:
+                    if known.get("type") == "cloud":
+                        infra.is_datacenter = True
+                        infra.datacenter_name = known.get("name")
+                        infra.facility_type = "datacenter"
+                    elif known.get("type") == "cdn":
+                        infra.is_pop = True
+                        infra.pop_name = known.get("name")
+                        infra.facility_type = "cdn-pop"
+                    elif known.get("type") == "transit":
+                        infra.facility_type = "transit"
         
-        return infra
+        return infra, facility_geo
     
     async def enrich_hop(
         self,
@@ -516,6 +578,7 @@ class IPIntelligence:
         Enrich a single traceroute hop with full intelligence.
         
         Returns an EnrichedHop with geo, ASN, and infrastructure data.
+        Uses accurate facility coordinates when available from infrastructure database.
         """
         enriched = EnrichedHop(
             hop_number=hop_number,
@@ -532,17 +595,42 @@ class IPIntelligence:
         
         geo, asn_info = await asyncio.gather(geo_task, asn_task)
         
-        enriched.geo = geo
-        enriched.asn_info = asn_info
+        # Get infrastructure based on ASN (may include accurate facility geo)
+        infrastructure, facility_geo = await self.get_infrastructure_info(ip, asn_info)
         
-        # Get infrastructure based on ASN
-        enriched.infrastructure = await self.get_infrastructure_info(ip, asn_info)
+        # Use facility coordinates if we have them (more accurate than IP geolocation)
+        # This ensures IXPs, datacenters, exchanges are at their real locations
+        if facility_geo and facility_geo.latitude and facility_geo.longitude:
+            # facility_geo is already a GeoLocation with accurate facility coordinates
+            # Merge with API geo to fill in any missing fields
+            enriched.geo = GeoLocation(
+                ip=ip,
+                latitude=facility_geo.latitude,
+                longitude=facility_geo.longitude,
+                city=facility_geo.city or geo.city,
+                region=geo.region,  # Use API region (facility may not have it)
+                country=facility_geo.country or geo.country,
+                country_code=facility_geo.country_code or geo.country_code,
+                accuracy_radius_km=1,  # Facility coords are very precise (within 1km)
+            )
+            _LOGGER.debug(
+                "Using facility coordinates for %s: %s at (%.4f, %.4f)",
+                ip,
+                infrastructure.ixp_name or infrastructure.datacenter_name or "unknown",
+                facility_geo.latitude,
+                facility_geo.longitude,
+            )
+        else:
+            enriched.geo = geo
+        
+        enriched.asn_info = asn_info
+        enriched.infrastructure = infrastructure
         
         # Detect transitions
         if previous_asn and asn_info.asn and previous_asn != asn_info.asn:
             enriched.asn_transition = True
         
-        if previous_country and geo.country_code and previous_country != geo.country_code:
+        if previous_country and enriched.geo.country_code and previous_country != enriched.geo.country_code:
             enriched.country_transition = True
         
         return enriched

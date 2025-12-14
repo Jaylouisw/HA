@@ -24,13 +24,17 @@ from .const import (
     CONF_SHARE_LOCATION,
     CONF_ENABLE_GEO_ENRICHMENT,
     CONF_PEER_PORT,
+    CONF_SHARE_TRACEROUTE_DATA,
+    CONF_ENABLE_MOBILE_TRACKING,
     EVENT_TRACEROUTE_COMPLETE,
     EVENT_PEER_DISCOVERED,
+    EVENT_TRACEROUTE_RECEIVED,
+    EVENT_MOBILE_TRACEROUTE,
 )
 from .network import NetworkUtilities, TracerouteResult
 from .ip_intel import IPIntelligence
 from .discovery import AutoDiscovery, DiscoveredPeer
-from .p2p import P2PNode, P2PPeer
+from .p2p import P2PNode, P2PPeer, SharedTraceroute
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +76,10 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # P2P port
         self._p2p_port = entry.data.get(CONF_PEER_PORT, DEFAULT_PEER_PORT)
         
+        # Privacy settings: Data sharing disabled by default
+        self._share_traceroute_data = entry.data.get(CONF_SHARE_TRACEROUTE_DATA, False)
+        self._enable_mobile_tracking = entry.data.get(CONF_ENABLE_MOBILE_TRACKING, False)
+        
         # Initialize auto-discovery (finds peers via DHT/IPFS without central server)
         self._auto_discovery = AutoDiscovery(
             peer_id=self._peer_id,
@@ -87,10 +95,11 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._peers: list[Peer] = []
         self._topology: dict[str, Any] = {"peers": [], "links": []}
         self._traceroute_results: dict[str, TracerouteResult] = {}
+        self._shared_traceroutes: list[SharedTraceroute] = []  # From all nodes
         self._share_location = entry.data.get(CONF_SHARE_LOCATION, True)
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Fetch data from discovery server."""
+        """Fetch data from discovery server and P2P network."""
         try:
             # Initialize API if needed
             await self._api.async_init()
@@ -114,6 +123,14 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Get topology
             self._topology = await self._api.async_get_topology()
             
+            # Get shared traceroutes from P2P network
+            shared_traceroutes = []
+            all_hops = []
+            if self._p2p_node:
+                self._shared_traceroutes = self._p2p_node.get_shared_traceroutes()
+                shared_traceroutes = [t.to_dict() for t in self._shared_traceroutes]
+                all_hops = self._p2p_node.get_all_hops()
+            
             return {
                 "peers": [p.to_dict() for p in self._peers],
                 "topology": self._topology,
@@ -127,6 +144,11 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "traceroutes": {
                     k: v.to_dict() for k, v in self._traceroute_results.items()
                 },
+                # New: All traceroutes from all nodes in the network
+                "shared_traceroutes": shared_traceroutes,
+                "all_hops": all_hops,  # Deduplicated hops for accurate mapping
+                "sharing_enabled": self._share_traceroute_data,
+                "mobile_tracking_enabled": self._enable_mobile_tracking,
             }
             
         except Exception as err:
@@ -145,6 +167,10 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "traceroutes": {
                     k: v.to_dict() for k, v in self._traceroute_results.items()
                 },
+                "shared_traceroutes": [t.to_dict() for t in self._shared_traceroutes],
+                "all_hops": [],
+                "sharing_enabled": self._share_traceroute_data,
+                "mobile_tracking_enabled": self._enable_mobile_tracking,
             }
 
     async def async_traceroute(self, target_peer_id: str | None = None) -> None:
@@ -228,6 +254,36 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "address": peer.address,
             "discovery_method": peer.discovery_method,
         })
+
+    def _on_traceroute_received(self, traceroute: SharedTraceroute) -> None:
+        """Handle traceroute data received from peers via P2P network.
+        
+        This is called when another node shares traceroute data with us.
+        Updates our local view without storing if we're not responsible.
+        """
+        _LOGGER.debug(
+            "Received shared traceroute from %s to %s (%d hops)",
+            traceroute.source_peer_id,
+            traceroute.target_peer_id,
+            len(traceroute.hops),
+        )
+        
+        # Fire event for any listeners (e.g., Lovelace card updates)
+        self.hass.bus.async_fire(EVENT_TRACEROUTE_RECEIVED, {
+            "source_peer_id": traceroute.source_peer_id,
+            "target_peer_id": traceroute.target_peer_id,
+            "hops": traceroute.hops,
+            "timestamp": traceroute.timestamp,
+            "is_mobile": traceroute.is_mobile,
+        })
+        
+        # If it's a mobile traceroute, fire separate event
+        if traceroute.is_mobile:
+            self.hass.bus.async_fire(EVENT_MOBILE_TRACEROUTE, {
+                "carrier": traceroute.carrier,
+                "cell_tower": traceroute.cell_tower_info,
+                "hops": traceroute.hops,
+            })
     
     async def async_start(self) -> None:
         """Start the coordinator and auto-discovery."""
@@ -243,9 +299,11 @@ class HAMNetworkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             on_peer_discovered=lambda p: self.hass.bus.async_fire(
                 EVENT_PEER_DISCOVERED, {"peer_id": p.peer_id, "display_name": p.display_name}
             ),
+            on_traceroute_received=self._on_traceroute_received,
+            share_data=self._share_traceroute_data,  # Privacy: disabled by default
         )
         
-        # Set location on P2P node
+        # Set location on P2P node (also sets up sharding responsibility)
         if self._share_location:
             self._p2p_node.set_location(
                 self._entry.data[CONF_LATITUDE],
