@@ -39,6 +39,23 @@ A fully distributed P2P integration that maps HA deployments globally and visual
 
 ---
 
+### HAGrid — UK Electrical Grid Map 🔌
+
+**Bring the UK electrical grid into your Home Assistant dashboard!**
+
+Real-time carbon intensity, generation mix, live faults, and interactive infrastructure maps powered by the Carbon Intensity API and UK Power Networks open data.
+
+**Features:**
+- 📊 Real-time carbon intensity with 48hr forecast
+- ⚡ Generation mix (wind, solar, gas, nuclear, etc.)
+- 🗺️ Interactive map with substations & power lines
+- 🚨 Live fault monitoring and outage alerts
+- 🌿 "Best time" recommendations for low-carbon usage
+
+➡️ **[View HAGrid Documentation](HAGrid/)**
+
+---
+
 ## 🚀 Installation (via HACS)
 
 1. Open **HACS** → **Integrations**
@@ -59,6 +76,10 @@ jaylouisw/HA/
 │   ├── custom_components/haimish/
 │   ├── www/haimish-map/
 │   └── README.md
+├── HAGrid/                # HAGrid integration
+│   ├── custom_components/hagrid/
+│   ├── www/hagrid-map/
+│   └── README.md
 ├── hacs.json              # HACS configuration
 └── README.md              # This file
 ```
@@ -69,7 +90,6 @@ jaylouisw/HA/
 
 More Home Assistant projects in development:
 
-- **HAGrid** — Electrical grid mapping with community P2P data sharing
 - **HAMarket** — P2P marketplace for smart home devices
 
 ---

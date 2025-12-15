@@ -33,7 +33,67 @@ You are Jay's **Home Assistant Architect**. This repo (`jaylouisw/HA`) contains 
 ---
 
 ## Current Status
-**HAIMish** is the first project - published and available via HACS.
+- **HAIMish** - Published and available via HACS ✅
+- **HAGrid** - Core structure complete, ready for testing 🔄
+
+---
+
+# HAGrid - UK Electrical Grid Map
+
+## Project Overview
+A Home Assistant integration for visualizing UK electrical grid data:
+- Real-time carbon intensity by postcode/region
+- Generation mix (wind, solar, gas, nuclear, etc.)
+- Live fault monitoring from UK Power Networks
+- Interactive map with substations, power lines, embedded generation
+- 48-hour carbon forecast with "best time" recommendations
+
+## Repository Structure
+```
+jaylouisw/HA/
+├── .github/workflows/     # CI/CD at repo root
+├── HAGrid/
+│   ├── custom_components/hagrid/
+│   │   ├── __init__.py      # Entry point
+│   │   ├── api.py           # Carbon Intensity + UKPN API clients
+│   │   ├── config_flow.py   # Postcode-based setup
+│   │   ├── const.py         # DNOs, regions, colors
+│   │   ├── coordinator.py   # Data update coordinator
+│   │   ├── sensor.py        # All sensor entities
+│   │   └── services.yaml    # Service definitions
+│   ├── www/hagrid-map/
+│   │   └── hagrid-map.js    # Lovelace card
+│   ├── hacs.json
+│   └── README.md
+└── (other projects)
+```
+
+## Data Sources
+| Source | Data | Auth |
+|--------|------|------|
+| Carbon Intensity API | Carbon intensity, generation mix, forecasts | None (free) |
+| UKPN Open Data | Substations, power lines, faults, embedded generation | None (CC BY 4.0) |
+
+## API Endpoints
+- `api.carbonintensity.org.uk` - National/regional carbon data
+- `ukpowernetworks.opendatasoft.com/api/explore/v2.1` - UKPN infrastructure
+
+## Key Sensors
+| Entity | Description |
+|--------|-------------|
+| `sensor.hagrid_carbon_intensity` | Current gCO2/kWh |
+| `sensor.hagrid_carbon_index` | very low/low/moderate/high/very high |
+| `sensor.hagrid_generation_mix` | Dominant fuel type |
+| `sensor.hagrid_live_faults` | Active fault count |
+| `sensor.hagrid_carbon_forecast` | Trend direction |
+| `sensor.hagrid_grid_map` | Full map data for Lovelace |
+
+## Remaining Tasks
+- [ ] Test in Home Assistant
+- [ ] Add more DNO data sources (SSEN, ENWL, NPG, etc.)
+- [ ] Energy Dashboard integration
+- [ ] P2P data sharing network
+- [ ] Smart meter data import
 
 ---
 
@@ -129,5 +189,4 @@ When creating new HA integrations/add-ons:
 - Consider privacy, security, and user experience
 
 ## Project Ideas (to discuss with Jay)
-- HAGrid: Advanced Electrical Network mapping integration with data from electricitymaps API, DNOs, and smart meters, as well as a community P2P sharing network for grid data, and openstreetmaps overlays for visualizing local grid infrastructure, substations, and generation sites.
 - HAMarket: A P2P marketplace for Home assistant compatible smart home tech, similar to ebay/facebook marketplace, allowing users to buy, sell, and trade devices directly within the Home Assistant ecosystem, leveraging decentralized discovery and reputation systems, as well as buyer protection, forced tracked postage, with automatic payment on delivery confirmation, community moderation of listings, and community review of buyer disputes. no price changes or haggling after initial offer. cash on collection at seller discretion with a compulsory discount, to be agreed between seller and buyer (to account for saved postage costs). or tracked postage compulsory (at sellers cost). geolocated listings with map view, and simple calendar invites for collection arrangement. no fees for any listings or sales, ever.
