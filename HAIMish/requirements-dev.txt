@@ -1,4 +1,0 @@
-# Development dependencies
-homeassistant
-aiohttp
-voluptuous

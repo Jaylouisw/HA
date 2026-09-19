@@ -5,39 +5,16 @@
 </p>
 
 <p align="center">
-  Custom integrations, add-ons, and tools for Home Assistant
+  Custom integrations and tools for Home Assistant
 </p>
 
 <p align="center">
-  <a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Badge"></a>
   <a href="https://github.com/jaylouisw/HA/releases"><img src="https://img.shields.io/github/release/jaylouisw/HA.svg" alt="GitHub Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/jaylouisw/HA.svg" alt="License"></a>
 </p>
 
 ---
 
 ## 📦 Projects
-
-### HAIMish — Home Assistant Internet Map (ish)
-
-<a href="HAIMish/">
-  <img src="HAIMish/images/banner.png" alt="HAIMish" width="500">
-</a>
-
-**See where the Home Assistant community is deployed around the world!**
-
-A fully distributed P2P integration that maps HA deployments globally and visualizes network topology between them. Zero central server — pure BitTorrent DHT + gossip protocol.
-
-**Features:**
-- 🗺️ Global map of HA deployments
-- 🌐 Network topology visualization
-- 📡 Traceroute with geographic hop enrichment
-- 🔒 Privacy first (location fuzzing, anonymous mode)
-- 🔄 Zero config peer discovery via BitTorrent DHT
-
-➡️ **[View HAIMish Documentation](HAIMish/)**
-
----
 
 ### HAGrid — UK Electrical Grid Map 🔌
 
@@ -56,14 +33,20 @@ Real-time carbon intensity, generation mix, live faults, and interactive infrast
 
 ---
 
-## 🚀 Installation (via HACS)
+## 🚀 Installation
 
-1. Open **HACS** → **Integrations**
-2. Click **⋮** → **Custom repositories**
-3. Add URL: `https://github.com/jaylouisw/HA`
-4. Category: **Integration**
-5. Find the integration you want and click **Download**
-6. **Restart Home Assistant**
+HAGrid is **not installable through HACS from this repository yet** — the integration sits under
+[`HAGrid/custom_components/hagrid`](HAGrid/custom_components/hagrid) rather than at the repository
+root, which is where HACS looks. Until that is fixed, install it manually:
+
+1. Copy [`HAGrid/custom_components/hagrid`](HAGrid/custom_components/hagrid) into your Home Assistant
+   `config/custom_components/hagrid` directory — the folder must be named exactly `hagrid`.
+2. Copy [`HAGrid/www/hagrid-map`](HAGrid/www/hagrid-map) into `config/www/hagrid-map`.
+3. **Restart Home Assistant.**
+4. Go to **Settings** → **Devices & Services** → **Add Integration** → **HAGrid**.
+
+If the config flow reports *"Invalid handler specified"*, the integration folder is almost always
+named wrongly — it must be `config/custom_components/hagrid/`, with `manifest.json` inside it.
 
 ---
 
@@ -71,11 +54,7 @@ Real-time carbon intensity, generation mix, live faults, and interactive infrast
 
 ```
 jaylouisw/HA/
-├── .github/workflows/     # CI/CD (HACS validation, releases)
-├── HAIMish/               # HAIMish integration
-│   ├── custom_components/haimish/
-│   ├── www/haimish-map/
-│   └── README.md
+├── .github/workflows/     # CI (HACS validation, releases)
 ├── HAGrid/                # HAGrid integration
 │   ├── custom_components/hagrid/
 │   ├── www/hagrid-map/
@@ -86,17 +65,9 @@ jaylouisw/HA/
 
 ---
 
-## 🔮 Coming Soon
-
-More Home Assistant projects in development:
-
-- **HAMarket** — P2P marketplace for smart home devices
-
----
-
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [HAGrid/LICENSE](HAGrid/LICENSE) for details.
 
 ---
 

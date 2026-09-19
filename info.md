@@ -1,28 +1,30 @@
-# HAIMish
+# HAGrid — UK Electrical Grid Map 🔌
 
-**Home Assistant Internet Map (ish)**
+Bring the UK electrical grid into your Home Assistant dashboard: real-time carbon intensity, the
+generation mix, live DNO faults, and an interactive map of substations and power lines — powered by
+the Carbon Intensity API and UK Power Networks open data.
 
-See where the Home Assistant community is deployed around the world and visualize the network paths between us!
+## Quick start (manual install, current state)
 
-## Quick Start
+HAGrid is not yet installable through HACS from this repository — the integration sits under
+`HAGrid/custom_components/hagrid` rather than at the repository root, which is where HACS looks.
 
-1. Install via HACS
-2. Restart Home Assistant  
-3. Add integration: **Settings** → **Devices & Services** → **Add Integration** → **HAIMish**
-4. Add the map card to your dashboard
+1. Copy `HAGrid/custom_components/hagrid` to `config/custom_components/hagrid` — the folder must be
+   named exactly `hagrid`.
+2. Copy `HAGrid/www/hagrid-map` to `config/www/hagrid-map`.
+3. Restart Home Assistant.
+4. **Settings** → **Devices & Services** → **Add Integration** → **HAGrid**, then enter your postcode
+   or pick a region/DNO.
 
-That's it! Your node will automatically discover other HAIMish peers via BitTorrent DHT.
+## What you get
 
-## What You'll See
+- 📊 Carbon intensity (gCO2/kWh), carbon index, and a 48-hour forecast
+- ⚡ Live generation mix — renewables vs fossil fuels
+- 🗺️ An interactive map card: substations, 33kV/HV lines, embedded generation
+- 🚨 Live faults and planned outages, with affected-customer counts
 
-- 🗺️ Community deployments on a world map
-- 🌐 Network topology links between peers
-- 📡 Traceroute paths with geographic hop visualization
-- 🏢 ASN/IXP/Datacenter identification for each hop
+## Notes
 
-## Privacy
-
-- Location is fuzzed by default (~10km radius)
-- Anonymous mode available
-- No central server - fully P2P
-- Privacy settings have 24h cooldown to prevent abuse
+- Every data source used is free and keyless (National Grid ESO's Carbon Intensity API, UKPN live
+  faults, OpenStreetMap Overpass).
+- See [`HAGrid/README.md`](../HAGrid/README.md) for the full documentation and the sensor list.
