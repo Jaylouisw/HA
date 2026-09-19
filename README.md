@@ -1,76 +1,30 @@
-# Jay's Home Assistant Projects
+# HAGrid has moved 🔌 → [github.com/jaylouisw/hagrid](https://github.com/jaylouisw/hagrid)
 
-<p align="center">
-  <img src="https://www.home-assistant.io/images/home-assistant-logo.svg" alt="Home Assistant" width="150">
-</p>
+**This repository is no longer where HAGrid lives.** Install it from its own repository, which has the
+layout HACS requires and a published release:
 
-<p align="center">
-  Custom integrations and tools for Home Assistant
-</p>
+1. HACS → ⋮ → **Custom repositories**
+2. Add `https://github.com/jaylouisw/hagrid` — category **Integration**
+3. Search for **HAGrid** → **Download**
+4. Restart Home Assistant, then **Settings → Devices & Services → Add Integration → HAGrid**
 
-<p align="center">
-  <a href="https://github.com/jaylouisw/HA/releases"><img src="https://img.shields.io/github/release/jaylouisw/HA.svg" alt="GitHub Release"></a>
-</p>
+## Why
 
----
+HACS reads `custom_components/` at a repository's **root**. Here the integration sat at
+`HAGrid/custom_components/hagrid` — two levels down, where HACS never looks — so HACS could never offer
+it from this repository (issue #2). The `zip_release` / `hagrid.zip` asset declared in the old
+`HAGrid/hacs.json` was never attached to any release either.
 
-## 📦 Projects
+## About the copy in this repository
 
-### HAGrid — UK Electrical Grid Map 🔌
+`HAGrid/` here is the pre-1.1.0 copy. It is **stale and unmaintained**, and it contains the bug reported
+as issue #3 — a Python dataclass field-order error that made every module fail to import, so Home
+Assistant could not register the config-flow handler and reported *"Invalid handler specified"*. That fix
+and everything after it live only in [jaylouisw/hagrid](https://github.com/jaylouisw/hagrid).
 
-**Bring the UK electrical grid into your Home Assistant dashboard!**
+Nothing in this repository is needed to install or run HAGrid. The other integration previously
+published from here (HAIMish) was retired on 2026-09-19.
 
-Real-time carbon intensity, generation mix, live faults, and interactive infrastructure maps powered by the Carbon Intensity API and UK Power Networks open data.
+## Licence
 
-**Features:**
-- 📊 Real-time carbon intensity with 48hr forecast
-- ⚡ Generation mix (wind, solar, gas, nuclear, etc.)
-- 🗺️ Interactive map with substations & power lines
-- 🚨 Live fault monitoring and outage alerts
-- 🌿 "Best time" recommendations for low-carbon usage
-
-➡️ **[View HAGrid Documentation](HAGrid/)**
-
----
-
-## 🚀 Installation
-
-HAGrid is **not installable through HACS from this repository yet** — the integration sits under
-[`HAGrid/custom_components/hagrid`](HAGrid/custom_components/hagrid) rather than at the repository
-root, which is where HACS looks. Until that is fixed, install it manually:
-
-1. Copy [`HAGrid/custom_components/hagrid`](HAGrid/custom_components/hagrid) into your Home Assistant
-   `config/custom_components/hagrid` directory — the folder must be named exactly `hagrid`.
-2. Copy [`HAGrid/www/hagrid-map`](HAGrid/www/hagrid-map) into `config/www/hagrid-map`.
-3. **Restart Home Assistant.**
-4. Go to **Settings** → **Devices & Services** → **Add Integration** → **HAGrid**.
-
-If the config flow reports *"Invalid handler specified"*, the integration folder is almost always
-named wrongly — it must be `config/custom_components/hagrid/`, with `manifest.json` inside it.
-
----
-
-## 🗂️ Repository Structure
-
-```
-jaylouisw/HA/
-├── .github/workflows/     # CI (HACS validation, releases)
-├── HAGrid/                # HAGrid integration
-│   ├── custom_components/hagrid/
-│   ├── www/hagrid-map/
-│   └── README.md
-├── hacs.json              # HACS configuration
-└── README.md              # This file
-```
-
----
-
-## 📄 License
-
-MIT License — see [HAGrid/LICENSE](HAGrid/LICENSE) for details.
-
----
-
-<p align="center">
-  <sub>Built with ❤️ for the Home Assistant community</sub>
-</p>
+MIT — see [HAGrid/LICENSE](HAGrid/LICENSE).
